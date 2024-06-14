@@ -63,39 +63,41 @@ class PointsController {
 
     const trx = await knex.transaction();
 
-    const point = {
-      image: request.file.filename,
-      name,
-      email,
-      whatsapp,
-      latitude,
-      longitude,
-      city,
-      uf
-    };
+    try {
+      const point = {
+        image: request.file ? request.file.filename : 'default.jpg', // Use default image if no file is uploaded
+        name,
+        email,
+        whatsapp,
+        latitude,
+        longitude,
+        city,
+        uf
+      };
   
-    const insertedIds = await trx('points').insert(point);
+      const insertedIds = await trx('points').insert(point, 'id'); // Solicita explicitamente o retorno do ID
+      const point_id = insertedIds[0];
   
-    const point_id = insertedIds[0];
-  
-    const pointItems = items
-      .split(',')
-      .map((item: string) => Number(item.trim()))
-      .map((item_id: number) => {
+      const pointItemsArray: number[] = Array.isArray(items) ? items : items.split(',').map((item: string) => Number(item.trim()));
+      const pointItems = pointItemsArray.map((item_id: number) => {
         return {
           item_id,
           point_id,
         };
-      })
+      });
   
-    await trx('point_items').insert(pointItems);
-
-    await trx.commit();
+      await trx('point_items').insert(pointItems);
+      await trx.commit();
   
-    return response.json({ 
-      id: point_id,
-      ...point,
-    });
+      return response.json({ 
+        id: point_id,
+        ...point,
+      });
+    } catch (error) {
+      await trx.rollback();
+      console.error('Transaction error:', error);
+      return response.status(500).json({ error: 'Internal server error' });
+    }
   }
 }
 
