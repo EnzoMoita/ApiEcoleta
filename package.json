@@ -11,6 +11,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": "12.22.12"
+  },
   "dependencies": {
     "celebrate": "^12.1.1",
     "cors": "^2.8.5",
